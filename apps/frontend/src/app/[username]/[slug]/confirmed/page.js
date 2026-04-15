@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { format } from 'date-fns';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
 
 function ConfirmationContent({ params }) {
   const { username, slug } = params;
@@ -15,8 +15,7 @@ function ConfirmationContent({ params }) {
 
   useEffect(() => {
     if (!bookingId) return setLoading(false);
-    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    axios.get(`${API}/api/bookings/${bookingId}`)
+    api.get(`/bookings/${bookingId}`)
       .then(r => setBooking(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -30,7 +29,7 @@ function ConfirmationContent({ params }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md w-full text-center">
+      <div className="bg-white rounded-2xl shadow-lg p-8 sm:p-10 max-w-md w-full text-center">
         {/* Success icon */}
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
           <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth={2.5}>
@@ -78,6 +77,18 @@ function ConfirmationContent({ params }) {
                 <p className="text-sm text-gray-500">{booking.inviteeEmail}</p>
               </div>
             </div>
+
+            {booking.eventType && (
+              <div className="flex items-start gap-3">
+                <svg width="16" height="16" className="mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#6b7280" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                <div>
+                  <p className="text-xs text-gray-400">Event type</p>
+                  <p className="text-sm font-semibold text-gray-800">{booking.eventType.name}</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

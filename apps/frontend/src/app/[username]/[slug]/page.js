@@ -1,11 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { getPublicEvent, getSlots, createBooking } from '@/lib/api';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isBefore, startOfToday, parse } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay, isBefore, isToday, startOfToday } from 'date-fns';
 import { useRouter } from 'next/navigation';
 
 // ── Mini calendar ────────────────────────────────────────────────
-function Calendar({ selectedDate, onSelect, availableDates }) {
+function Calendar({ selectedDate, onSelect, availableDays }) {
   const [viewMonth, setViewMonth] = useState(new Date());
   const today = startOfToday();
 
@@ -17,14 +17,14 @@ function Calendar({ selectedDate, onSelect, availableDates }) {
       {/* Month nav */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setViewMonth(m => subMonths(m, 1))}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
           </svg>
         </button>
         <span className="text-sm font-semibold text-gray-800">{format(viewMonth, 'MMMM yyyy')}</span>
         <button onClick={() => setViewMonth(m => addMonths(m, 1))}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/>
           </svg>
@@ -43,14 +43,18 @@ function Calendar({ selectedDate, onSelect, availableDates }) {
         {Array(startPad).fill(null).map((_, i) => <div key={`pad-${i}`} />)}
         {days.map(day => {
           const past = isBefore(day, today);
+          const todayMark = isToday(day);
           const selected = selectedDate && isSameDay(day, selectedDate);
-          const available = availableDates.some(d => isSameDay(new Date(d), day));
+          // Only show days where the user has set availability
+          const dayOfWeek = getDay(day);
+          const available = availableDays.includes(dayOfWeek);
 
           return (
             <button key={day.toISOString()} disabled={past || !available}
               onClick={() => onSelect(day)}
-              className={`aspect-square rounded-full text-xs font-medium transition-all flex items-center justify-center
-                ${selected ? 'bg-blue-600 text-white'
+              className={`aspect-square rounded-full text-xs font-medium transition-all flex items-center justify-center relative
+                ${selected ? 'bg-blue-600 text-white shadow-md'
+                  : todayMark && available && !past ? 'ring-2 ring-blue-400 text-blue-600 font-bold hover:bg-blue-50'
                   : available && !past ? 'text-gray-800 hover:bg-blue-50 font-semibold'
                   : 'text-gray-300 cursor-not-allowed'}`}>
               {format(day, 'd')}
@@ -63,25 +67,36 @@ function Calendar({ selectedDate, onSelect, availableDates }) {
 }
 
 // ── Time slots ──────────────────────────────────────────────────
-function TimeSlots({ slots, timezone, selectedSlot, onSelect }) {
+function TimeSlots({ slots, timezone, selectedSlot, onSelect, loading }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+        <p className="text-xs text-gray-400">Loading times...</p>
+      </div>
+    );
+  }
+
   if (!slots) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col h-full">
       <p className="text-xs text-gray-400 mb-3">{timezone}</p>
       {slots.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-8">No available times on this day</p>
       ) : (
-        slots.map(slot => {
-          const time = format(new Date(slot), 'h:mm a');
-          const selected = slot === selectedSlot;
-          return (
-            <button key={slot} onClick={() => onSelect(slot)}
-              className={`w-full py-3 rounded-lg border text-sm font-medium transition-all ${selected ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:border-blue-400 hover:text-blue-600'}`}>
-              {time}
-            </button>
-          );
-        })
+        <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
+          {slots.map(slot => {
+            const time = format(new Date(slot), 'h:mm a');
+            const selected = slot === selectedSlot;
+            return (
+              <button key={slot} onClick={() => onSelect(slot)}
+                className={`w-full py-3 rounded-lg border text-sm font-medium transition-all ${selected ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'border-gray-200 text-blue-600 hover:border-blue-500 hover:bg-blue-50'}`}>
+                {time}
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -104,7 +119,7 @@ function BookingForm({ slot, eventType, onSubmit, onBack, loading }) {
 
   return (
     <div>
-      <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
+      <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors">
         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
@@ -115,11 +130,11 @@ function BookingForm({ slot, eventType, onSubmit, onBack, loading }) {
 
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="label">Name</label>
+          <label className="label">Name *</label>
           <input className="input" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
         </div>
         <div>
-          <label className="label">Email</label>
+          <label className="label">Email *</label>
           <input className="input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         <div>
@@ -143,26 +158,20 @@ export default function BookingPage({ params }) {
   const [eventData, setEventData] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [slots, setSlots] = useState(null);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [step, setStep] = useState('calendar'); // 'calendar' | 'form'
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Pre-computed available dates (next 60 days)
-  const [availableDates, setAvailableDates] = useState([]);
+  // Actual available days of the week from backend
+  const [availableDays, setAvailableDays] = useState([]);
 
   useEffect(() => {
     getPublicEvent(username, slug).then(data => {
       setEventData(data);
-      // Generate available days for the next 60 days
-      const avail = [];
-      const today = startOfToday();
-      for (let i = 0; i < 60; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() + i);
-        avail.push(d.toISOString());
-      }
-      setAvailableDates(avail);
+      // Use actual available days from the backend
+      setAvailableDays(data.availableDays || []);
     }).catch(() => setError('Event not found'));
   }, [username, slug]);
 
@@ -170,12 +179,15 @@ export default function BookingPage({ params }) {
     setSelectedDate(date);
     setSelectedSlot(null);
     setStep('calendar');
+    setSlotsLoading(true);
     const dateStr = format(date, 'yyyy-MM-dd');
     try {
       const { slots: s } = await getSlots(username, slug, dateStr);
       setSlots(s);
     } catch {
       setSlots([]);
+    } finally {
+      setSlotsLoading(false);
     }
   };
 
@@ -194,7 +206,7 @@ export default function BookingPage({ params }) {
       });
       router.push(`/${username}/${slug}/confirmed?bookingId=${booking.id}`);
     } catch (err) {
-      alert(err.response?.data?.error || 'Booking failed');
+      alert(err.response?.data?.error || 'Booking failed. This slot may no longer be available.');
       setStep('calendar');
     } finally {
       setBookingLoading(false);
@@ -216,11 +228,11 @@ export default function BookingPage({ params }) {
   const { user, eventType } = eventData;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full max-w-3xl flex">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-6 sm:py-12 px-4">
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden w-full max-w-3xl flex flex-col md:flex-row">
 
         {/* Left panel - event info */}
-        <div className="w-72 flex-shrink-0 p-8 border-r border-gray-100">
+        <div className="w-full md:w-72 flex-shrink-0 p-6 sm:p-8 border-b md:border-b-0 md:border-r border-gray-100">
           <p className="text-xs text-gray-400 mb-1">{user.name}</p>
           <h2 className="font-bold text-gray-900 text-lg mb-3" style={{ color: eventType.color }}>{eventType.name}</h2>
           <div className="flex items-center gap-2 mb-2">
@@ -248,22 +260,22 @@ export default function BookingPage({ params }) {
         </div>
 
         {/* Right panel */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-6 sm:p-8">
           {step === 'calendar' ? (
-            <div className="flex gap-8">
+            <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
               {/* Calendar */}
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-800 mb-4 text-sm">Select a date</h3>
                 <Calendar
                   selectedDate={selectedDate}
                   onSelect={handleDateSelect}
-                  availableDates={availableDates}
+                  availableDays={availableDays}
                 />
               </div>
 
               {/* Time slots - only shown when date selected */}
-              {selectedDate && slots !== null && (
-                <div className="w-36">
+              {selectedDate && (slots !== null || slotsLoading) && (
+                <div className="w-full sm:w-48">
                   <h3 className="font-semibold text-gray-800 mb-4 text-sm">
                     {format(selectedDate, 'EEE, MMM d')}
                   </h3>
@@ -272,6 +284,7 @@ export default function BookingPage({ params }) {
                     timezone={user.timezone}
                     selectedSlot={selectedSlot}
                     onSelect={handleSlotSelect}
+                    loading={slotsLoading}
                   />
                 </div>
               )}
