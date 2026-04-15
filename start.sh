@@ -42,7 +42,7 @@ cd ../..
 # ── Start both servers ────────────────────────────────────────────
 echo -e "${YELLOW}[4/4] Starting servers...${NC}"
 echo ""
-echo -e "${GREEN}  Backend  → http://localhost:5000${NC}"
+echo -e "${GREEN}  Backend  → http://localhost:5001${NC}"
 echo -e "${GREEN}  Frontend → http://localhost:3000${NC}"
 echo -e "${GREEN}  Booking  → http://localhost:3000/alex${NC}"
 echo ""
