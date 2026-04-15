@@ -1,0 +1,87 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  username  String   @unique
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  eventTypes    EventType[]
+  availabilities Availability[]
+  bookings       Booking[]
+
+  @@map("users")
+}
+
+model EventType {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  slug        String
+  duration    Int      // in minutes
+  description String?
+  color       String   @default("#0069ff")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@unique([userId, slug])
+  @@map("event_types")
+}
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    String
+  dayOfWeek Int      // 0=Sunday, 1=Monday ... 6=Saturday
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayOfWeek])
+  @@map("availabilities")
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  userId        String
+  eventTypeId   String
+  inviteeName   String
+  inviteeEmail  String
+  startTime     DateTime
+  endTime       DateTime
+  timezone      String
+  notes         String?
+  status        BookingStatus @default(CONFIRMED)
+  cancelReason  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}

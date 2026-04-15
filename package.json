@@ -1,0 +1,9 @@
+{
+  "name": "calendly-clone",
+  "private": true,
+  "workspaces": ["apps/backend", "apps/frontend"],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "dev:frontend": "npm run dev --workspace=apps/frontend"
+  }
+}
