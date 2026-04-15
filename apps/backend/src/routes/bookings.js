@@ -2,8 +2,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../utils/prisma");
 const { sendCancellationEmail } = require("../utils/email");
-
-const DEFAULT_USER_ID = "default-user-id";
+const { DEFAULT_USER_ID } = require("../config");
 
 // GET /api/bookings?filter=upcoming|past
 router.get("/", async (req, res) => {
@@ -34,11 +33,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// GET /api/bookings/:id
+// GET /api/bookings/:id — also used by confirmation page
 router.get("/:id", async (req, res) => {
   try {
-    const booking = await prisma.booking.findFirst({
-      where: { id: req.params.id, userId: DEFAULT_USER_ID },
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.id },
       include: { eventType: true, user: { select: { name: true, email: true } } },
     });
     if (!booking) return res.status(404).json({ error: "Booking not found" });

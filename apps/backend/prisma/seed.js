@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const { DEFAULT_USER_ID } = require("../src/config");
 const prisma = new PrismaClient();
 
 async function main() {
@@ -13,7 +14,7 @@ async function main() {
   // Create default user (simulating logged-in admin)
   const user = await prisma.user.create({
     data: {
-      id: "default-user-id",
+      id: DEFAULT_USER_ID,
       name: "Alex Johnson",
       email: "alex@example.com",
       username: "alex",

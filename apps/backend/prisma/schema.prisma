@@ -78,6 +78,8 @@ model Booking {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
 
+  @@index([userId, startTime])
+  @@index([userId, status])
   @@map("bookings")
 }
 

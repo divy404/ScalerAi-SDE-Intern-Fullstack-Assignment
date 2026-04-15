@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../utils/prisma");
-
-const DEFAULT_USER_ID = "default-user-id";
+const { DEFAULT_USER_ID } = require("../config");
 
 // GET /api/event-types
 router.get("/", async (req, res) => {

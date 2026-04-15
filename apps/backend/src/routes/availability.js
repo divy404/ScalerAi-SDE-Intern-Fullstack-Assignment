@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../utils/prisma");
-
-const DEFAULT_USER_ID = "default-user-id";
+const { DEFAULT_USER_ID } = require("../config");
 
 // GET /api/availability
 router.get("/", async (req, res) => {
@@ -25,6 +24,16 @@ router.put("/", async (req, res) => {
 
     if (!Array.isArray(schedule)) {
       return res.status(400).json({ error: "schedule must be an array" });
+    }
+
+    // Validate each entry
+    for (const day of schedule) {
+      if (day.isActive && day.startTime >= day.endTime) {
+        const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        return res.status(400).json({
+          error: `Invalid hours for ${dayNames[day.dayOfWeek]}: start time must be before end time`,
+        });
+      }
     }
 
     const results = await Promise.all(

@@ -3,7 +3,6 @@ const router = express.Router();
 const prisma = require("../utils/prisma");
 const { generateAvailableSlots } = require("../utils/slotCalculator");
 const { sendBookingConfirmation } = require("../utils/email");
-const { startOfDay, endOfDay, addDays } = require("date-fns");
 
 // GET /api/public/:username - Get user profile + event types (public scheduling page)
 router.get("/:username", async (req, res) => {
@@ -20,7 +19,14 @@ router.get("/:username", async (req, res) => {
       select: { id: true, name: true, slug: true, duration: true, description: true, color: true },
     });
 
-    res.json({ user, eventTypes });
+    // Also return availability so the frontend can grey-out unavailable days
+    const availability = await prisma.availability.findMany({
+      where: { userId: user.id, isActive: true },
+      select: { dayOfWeek: true },
+    });
+    const availableDays = availability.map((a) => a.dayOfWeek);
+
+    res.json({ user, eventTypes, availableDays });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -39,7 +45,18 @@ router.get("/:username/:slug", async (req, res) => {
     });
     if (!eventType) return res.status(404).json({ error: "Event type not found" });
 
-    res.json({ user: { name: user.name, username: user.username, timezone: user.timezone }, eventType });
+    // Return availability days so the calendar knows which days to enable
+    const availability = await prisma.availability.findMany({
+      where: { userId: user.id, isActive: true },
+      select: { dayOfWeek: true },
+    });
+    const availableDays = availability.map((a) => a.dayOfWeek);
+
+    res.json({
+      user: { name: user.name, username: user.username, timezone: user.timezone },
+      eventType,
+      availableDays,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -61,23 +78,25 @@ router.get("/:username/:slug/slots", async (req, res) => {
     });
     if (!eventType) return res.status(404).json({ error: "Event type not found" });
 
-    // Parse the requested date
+    // Parse the requested date — use wide window to catch cross-day overlaps
     const targetDate = new Date(date + "T00:00:00.000Z");
-    const dayStart = startOfDay(targetDate);
-    const dayEnd = endOfDay(targetDate);
+    const dayStart = new Date(targetDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(targetDate);
+    dayEnd.setHours(23, 59, 59, 999);
 
     // Get availability for this user
     const availabilities = await prisma.availability.findMany({
       where: { userId: user.id, isActive: true },
     });
 
-    // Get confirmed bookings on this day (same event type OR any event type — prevent double booking)
+    // Fixed: Use overlap logic to catch bookings that span day boundaries
     const existingBookings = await prisma.booking.findMany({
       where: {
         userId: user.id,
         status: "CONFIRMED",
-        startTime: { gte: dayStart },
-        endTime: { lte: dayEnd },
+        startTime: { lt: dayEnd },
+        endTime: { gt: dayStart },
       },
     });
 
