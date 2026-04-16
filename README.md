@@ -9,10 +9,12 @@
 
 | Service | URL |
 |---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:5001 |
-| Public Booking | http://localhost:3000/alex |
-| Sample Booking Flow | http://localhost:3000/alex/30min |
+| Frontend | [https://scaler-ai-sde-intern-fullstack-assi.vercel.app](https://scaler-ai-sde-intern-fullstack-assi.vercel.app) |
+| Backend API | [https://calendly-clone-backend-kfnk.onrender.com](https://calendly-clone-backend-kfnk.onrender.com) |
+| Public Booking | [https://scaler-ai-sde-intern-fullstack-assi.vercel.app/alex](https://scaler-ai-sde-intern-fullstack-assi.vercel.app/alex) |
+| Sample Booking Flow | [https://scaler-ai-sde-intern-fullstack-assi.vercel.app/alex/30min](https://scaler-ai-sde-intern-fullstack-assi.vercel.app/alex/30min) |
+
+> ⚠️ **Note:** Backend is hosted on Render free tier — first request may take ~30s if the server has spun down due to inactivity.
 
 ---
 
@@ -267,7 +269,7 @@ The seed script (`prisma/seed.js`) creates:
 | **Availability** | Mon–Fri, 9:00 AM – 5:00 PM Eastern |
 | **Bookings** | 5 sample bookings (3 upcoming confirmed, 1 past, 1 cancelled) |
 
-Access the demo flow at: **http://localhost:3000/alex**
+Access the demo flow at: **[https://scaler-ai-sde-intern-fullstack-assi.vercel.app/alex](https://scaler-ai-sde-intern-fullstack-assi.vercel.app/alex)**
 
 ---
 
@@ -278,9 +280,10 @@ Access the demo flow at: **http://localhost:3000/alex**
 | Setting | Value |
 |---|---|
 | Root Directory | `apps/backend` |
-| Build Command | `npm install && npx prisma generate && npx prisma migrate deploy && node prisma/seed.js` |
-| Start Command | `npm start` |
-| Environment Variables | `DATABASE_URL`, `PORT=10000`, `FRONTEND_URL=https://your-app.vercel.app` |
+| Build Command | `npm install && npx prisma generate` |
+| Start Command | `npx prisma migrate deploy && npx prisma db seed && node src/index.js` |
+| Environment Variables | `DATABASE_URL`, `PORT=5001`, `FRONTEND_URL=https://scaler-ai-sde-intern-fullstack-assi.vercel.app` |
+| Live URL | [https://calendly-clone-backend-kfnk.onrender.com](https://calendly-clone-backend-kfnk.onrender.com) |
 
 ### Frontend → Vercel
 
@@ -288,7 +291,8 @@ Access the demo flow at: **http://localhost:3000/alex**
 |---|---|
 | Root Directory | `apps/frontend` |
 | Framework | Next.js (auto-detected) |
-| Environment Variables | `NEXT_PUBLIC_API_URL=https://your-backend.onrender.com` |
+| Environment Variables | `NEXT_PUBLIC_API_URL=https://calendly-clone-backend-kfnk.onrender.com` |
+| Live URL | [https://scaler-ai-sde-intern-fullstack-assi.vercel.app](https://scaler-ai-sde-intern-fullstack-assi.vercel.app) |
 
 ---
 
